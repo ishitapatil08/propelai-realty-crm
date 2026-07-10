@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "../../../../lib/auth";
-import { StatCard } from "../../../../components/ui/StatCard";
-import { Funnel } from "../../../../components/ui/Funnel";
+import { useAuth } from "../../../lib/auth";
+import { StatCard } from "../../../components/ui/StatCard";
+import { Funnel } from "../../../components/ui/Funnel";
 import { TrendingUp, Phone, Briefcase, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/tenant-admin/")({

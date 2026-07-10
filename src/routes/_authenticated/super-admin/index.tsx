@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "../../../../lib/auth";
-import { StatCard } from "../../../../components/ui/StatCard";
-import { Funnel } from "../../../../components/ui/Funnel";
+import { useAuth } from "../../../lib/auth";
+import { StatCard } from "../../../components/ui/StatCard";
+import { Funnel } from "../../../components/ui/Funnel";
 import { TrendingUp, Building2, Users, Phone } from "lucide-react";
-import { PLAN_PRICE } from "../../../../lib/types";
+import { PLAN_PRICE } from "../../../lib/types";
 
 export const Route = createFileRoute("/_authenticated/super-admin/")({
   component: SuperAdminDashboard,
