@@ -1,0 +1,5 @@
+/*
+  Cloudflare Pages SPA routing fallback.
+  All routes are served by index.html so client-side routing works on refresh/direct URL.
+*/
+/* index.html 200 */
