@@ -1,17 +1,4 @@
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { RouterProvider } from "@tanstack/react-router";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getRouter } from "./router";
-import "./styles.css";
-
-const queryClient = new QueryClient();
-const router = getRouter();
-
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
-  </React.StrictMode>
-);
+// This project has migrated to Next.js 15 (App Router).
+// The entry point is now handled by Next.js — see src/app/layout.tsx.
+// This file is kept for git history continuity only.
+export {};
