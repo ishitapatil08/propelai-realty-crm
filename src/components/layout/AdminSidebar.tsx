@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { LogOut, Home, Users, Phone, Calendar, BarChart3, Settings, Bot } from "lucide-react";
