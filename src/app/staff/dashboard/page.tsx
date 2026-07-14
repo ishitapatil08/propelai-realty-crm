@@ -6,7 +6,7 @@ export default function StaffDashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
         <p className="text-muted-foreground mt-2">
-          Here's what's assigned to you today.
+          Here&apos;s what&apos;s assigned to you today.
         </p>
       </div>
 
