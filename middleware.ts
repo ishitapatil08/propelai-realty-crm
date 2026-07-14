@@ -1,13 +1,24 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
 import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+// Explicit cookie type matching @supabase/ssr's CookieMethodsServer interface
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: {
+    domain?: string;
+    expires?: Date;
+    httpOnly?: boolean;
+    maxAge?: number;
+    path?: string;
+    sameSite?: boolean | "lax" | "strict" | "none";
+    secure?: boolean;
+  };
+};
 
 export async function middleware(request: NextRequest) {
-  // 1. Refresh session
-  const supabaseResponse = await updateSession(request);
-  
-  // 2. Check auth state
+  let supabaseResponse = NextResponse.next({ request });
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -16,66 +27,68 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: any[]) {
-          // Handled by updateSession
+        setAll(cookiesToSet: CookieToSet[]) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // IMPORTANT: Do not add logic between createServerClient and getUser().
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
   const isAuthRoute = path === "/login" || path === "/select-role";
   const isPublicRoute = path === "/";
+  const isStaticAsset =
+    path.startsWith("/_next") ||
+    path.startsWith("/api") ||
+    /\.(.+)$/.test(path);
 
-  if (!user && !isAuthRoute && !isPublicRoute && !path.startsWith("/_next") && !path.startsWith("/api") && !path.match(/\.(.*)$/)) {
+  // Redirect unauthenticated users to login
+  if (!user && !isAuthRoute && !isPublicRoute && !isStaticAsset) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (user) {
-    // If user is logged in and tries to access login page, redirect to dashboard
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const role = profile?.role as string | null;
+
+    // Redirect authenticated users away from auth pages
     if (isAuthRoute) {
-      // Need to find role to route correctly
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      
-      const role = profile?.role;
       if (role === "super_admin") {
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-      } else if (role === "tenant_admin" || role === "staff") {
-        return NextResponse.redirect(new URL("/staff/dashboard", request.url));
-      } else {
-        return NextResponse.redirect(new URL("/select-role", request.url));
       }
-    }
-
-    // Role-based route guards
-    if (path.startsWith("/admin")) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      
-      if (profile?.role !== "super_admin" && profile?.role !== "tenant_admin") {
+      if (role === "tenant_admin" || role === "staff") {
         return NextResponse.redirect(new URL("/staff/dashboard", request.url));
       }
     }
 
-    if (path.startsWith("/staff")) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-      
-      if (profile?.role === "super_admin") {
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-      }
+    // Guard /admin routes — only admins allowed
+    if (
+      path.startsWith("/admin") &&
+      role !== "super_admin" &&
+      role !== "tenant_admin"
+    ) {
+      return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+    }
+
+    // Guard /staff routes — super_admins go to admin dashboard
+    if (path.startsWith("/staff") && role === "super_admin") {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
   }
 
@@ -84,12 +97,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -17,6 +17,7 @@ node_modules
 out/
 dist/
 dist-ssr/
+.open-next/
 
 # Env files - NEVER commit these
 .env
