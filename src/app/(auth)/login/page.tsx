@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { loginWithCredentials, loginWithDemo } from "@/lib/auth/actions";
+import { loginWithCredentials, signupWithCredentials } from "@/lib/auth/actions";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { ArrowLeft, Shield, Building2, UserCircle2 } from "lucide-react";
-import { demoAccounts } from "@/lib/auth/mock-users";
+import { ArrowLeft } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function LoginPage() {
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string, message?: string }> }) {
+  const resolvedSearchParams = await searchParams;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -30,93 +30,98 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight mb-2">Welcome to PropelAI</h1>
           <p className="text-sm text-muted-foreground">
-            Sign in to access your CRM dashboard
+            Sign in or create an account
           </p>
         </div>
 
-        {isDemoMode ? (
-          <div className="w-full max-w-[800px] grid md:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4 text-primary">
-                <Shield className="w-5 h-5" />
-                <h2 className="font-semibold text-sm uppercase tracking-wider">Platform Admin</h2>
-              </div>
-              <div className="space-y-3">
-                {demoAccounts.filter(a => a.role === "super_admin").map(account => (
-                  <form key={account.email} action={loginWithDemo}>
-                    <input type="hidden" name="email" value={account.email} />
-                    <button 
-                      type="submit"
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors text-left"
-                    >
-                      <UserCircle2 className="w-8 h-8 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium text-sm">{account.name}</div>
-                        <div className="text-xs text-muted-foreground">{account.email}</div>
-                      </div>
-                    </button>
-                  </form>
-                ))}
-              </div>
+        <div className="w-full max-w-[400px]">
+          {resolvedSearchParams?.error && (
+            <div className="mb-4 p-3 text-sm font-medium text-destructive bg-destructive/10 rounded-md border border-destructive/20 text-center">
+              {resolvedSearchParams.error}
             </div>
+          )}
+          {resolvedSearchParams?.message && (
+            <div className="mb-4 p-3 text-sm font-medium text-primary bg-primary/10 rounded-md border border-primary/20 text-center">
+              {resolvedSearchParams.message}
+            </div>
+          )}
 
-            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4 text-primary">
-                <Building2 className="w-5 h-5" />
-                <h2 className="font-semibold text-sm uppercase tracking-wider">Tenant Demo</h2>
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <form action={loginWithCredentials} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium">Email Address</label>
+                    <input 
+                      id="email"
+                      name="email"
+                      type="email" 
+                      required
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="password" className="text-sm font-medium">Password</label>
+                    <input 
+                      id="password"
+                      name="password"
+                      type="password" 
+                      required
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-2"
+                  >
+                    Sign In
+                  </button>
+                </form>
               </div>
-              <div className="space-y-3">
-                {demoAccounts.filter(a => a.role !== "super_admin").map(account => (
-                  <form key={account.email} action={loginWithDemo}>
-                    <input type="hidden" name="email" value={account.email} />
-                    <button 
-                      type="submit"
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-colors text-left"
-                    >
-                      <UserCircle2 className="w-8 h-8 text-muted-foreground" />
-                      <div>
-                        <div className="font-medium text-sm">{account.name}</div>
-                        <div className="text-xs text-muted-foreground">{account.role === "tenant_admin" ? "Admin" : "Staff"} &middot; {account.tenantName}</div>
-                      </div>
-                    </button>
-                  </form>
-                ))}
+            </TabsContent>
+
+            <TabsContent value="register">
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <form action={signupWithCredentials} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="register-email" className="text-sm font-medium">Email Address</label>
+                    <input 
+                      id="register-email"
+                      name="email"
+                      type="email" 
+                      required
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="name@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="register-password" className="text-sm font-medium">Password</label>
+                    <input 
+                      id="register-password"
+                      name="password"
+                      type="password" 
+                      required
+                      minLength={6}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-2"
+                  >
+                    Create Account
+                  </button>
+                </form>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full max-w-[400px] rounded-xl border border-border bg-card p-6 shadow-sm">
-            <form action={loginWithCredentials} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email Address</label>
-                <input 
-                  id="email"
-                  name="email"
-                  type="email" 
-                  required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="name@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
-                <input 
-                  id="password"
-                  name="password"
-                  type="password" 
-                  required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-              <button 
-                type="submit"
-                className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-2"
-              >
-                Sign In
-              </button>
-            </form>
-          </div>
-        )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </main>
     </div>
   );
