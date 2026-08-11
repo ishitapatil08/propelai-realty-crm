@@ -61,11 +61,18 @@ export async function middleware(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, tenant_id")
       .eq("id", user.id)
       .single();
 
     const role = profile?.role as string | null;
+    const tenantId = profile?.tenant_id as string | null;
+
+    // Set tenant context in response headers for API routes
+    if (tenantId) {
+      supabaseResponse.headers.set("x-tenant-id", tenantId);
+      supabaseResponse.headers.set("x-user-id", user.id);
+    }
 
     // Redirect authenticated users away from auth pages
     if (isAuthRoute) {
