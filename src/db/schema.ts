@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, boolean, uuid, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean, uuid, pgEnum, jsonb } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["super_admin", "tenant_admin", "staff"]);
 export const leadStatusEnum = pgEnum("lead_status", ["New", "Contacted", "Qualified", "Visit Scheduled", "Won", "Lost"]);
@@ -135,7 +135,8 @@ export const activityLogs = pgTable("activity_logs", {
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   userId: uuid("user_id").references(() => profiles.id).notNull(),
   action: text("action").notNull(),
-  entityType: text("entity_type").notNull(),
-  entityId: uuid("entity_id").notNull(),
+  entityType: text("entity_type"),
+  entityId: uuid("entity_id"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

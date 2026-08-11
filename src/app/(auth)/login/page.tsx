@@ -4,6 +4,7 @@ import { loginWithCredentials, signupWithCredentials } from "@/lib/auth/actions"
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BrandLogo } from "@/components/ui/BrandLogo";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string, message?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -20,17 +21,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-[400px] mb-8 text-center flex flex-col items-center">
-          <div className="relative w-12 h-12 mb-6">
-            <Image 
-              src="/logo.png" 
-              alt="PropelAI Logo" 
-              fill 
-              className="object-contain"
-            />
+          <div className="mb-4">
+            <BrandLogo size="lg" subtitle="Autonomous Real Estate OS" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight mb-2">Welcome to PropelAI</h1>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">Welcome to PropelAI</h1>
           <p className="text-sm text-muted-foreground">
-            Sign in or create an account
+            Sign in or create your tenant account
           </p>
         </div>
 
@@ -121,6 +117,36 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Demo Login Buttons */}
+          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+            <div className="mt-8 border-t border-border pt-6">
+              <h3 className="text-sm font-medium text-center text-muted-foreground mb-4">Quick Demo Login</h3>
+              <div className="space-y-3">
+                <form action={loginWithCredentials}>
+                  <input type="hidden" name="email" value="super@propelai.com" />
+                  <input type="hidden" name="password" value="password123" />
+                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    Login as Super Admin (Platform)
+                  </button>
+                </form>
+                <form action={loginWithCredentials}>
+                  <input type="hidden" name="email" value="admin@tenant.com" />
+                  <input type="hidden" name="password" value="password123" />
+                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    Login as Tenant Admin (Company)
+                  </button>
+                </form>
+                <form action={loginWithCredentials}>
+                  <input type="hidden" name="email" value="staff@tenant.com" />
+                  <input type="hidden" name="password" value="password123" />
+                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    Login as Staff (Member)
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

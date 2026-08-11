@@ -1,80 +1,158 @@
-import { BarChart3, Bot, Briefcase, Phone, TrendingUp, Users } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { KpiCard } from "@/components/ui/KpiCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import {
+  Phone,
+  Users,
+  CalendarCheck,
+  Bot,
+  TrendingUp,
+  Trophy,
+} from "lucide-react";
+import { getSession } from "@/lib/auth/session";
+import { getTenantDashboardKPIs, getTenantLeads } from "@/lib/api/tenant-admin";
+import { redirect } from "next/navigation";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScoreRing } from "@/components/ui/ScoreRing";
 
-export default function AdminDashboard() {
+export default async function DashboardPage() {
+  const { tenantId } = await getSession();
+  if (!tenantId) redirect("/login");
+
+  const [kpis, recentLeads] = await Promise.all([
+    getTenantDashboardKPIs(tenantId),
+    getTenantLeads(tenantId),
+  ]);
+
+  const latestLeads = recentLeads.slice(0, 5);
+
   return (
     <div className="space-y-8 fade-in-up">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Platform Overview</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor your tenant usage, leads, and AI performance.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Your tenant's performance at a glance."
+      />
 
+      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-6 stat-glow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-sm text-muted-foreground">Total Leads</h3>
-            <Phone className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-3xl font-bold">12,450</div>
-          <p className="text-xs text-muted-foreground mt-1 text-emerald-600 font-medium">+14% from last month</p>
-        </div>
+        <KpiCard
+          label="Total Leads"
+          value={kpis.totalLeads.toString()}
+          sub={`${kpis.wonLeads} won · ${kpis.lostLeads} lost`}
+          subTone="neutral"
+          icon={Phone}
+        />
+        <KpiCard
+          label="Active Staff"
+          value={kpis.activeStaff.toString()}
+          sub="Team members"
+          subTone="neutral"
+          icon={Users}
+        />
+        <KpiCard
+          label="Visits Scheduled"
+          value={kpis.scheduledVisits.toString()}
+          sub="Upcoming site visits"
+          subTone="positive"
+          icon={CalendarCheck}
+        />
+        <KpiCard
+          label="AI Calls Made"
+          value={kpis.totalAiCalls.toString()}
+          sub="Automated outreach"
+          subTone="neutral"
+          icon={Bot}
+        />
+      </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 stat-glow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-sm text-muted-foreground">Active Staff</h3>
-            <Users className="w-4 h-4 text-primary" />
+      {/* Conversion + Funnel Row */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <KpiCard
+          label="Conversion Rate"
+          value={`${kpis.conversionRate}%`}
+          sub="Leads → Won"
+          subTone={kpis.conversionRate > 20 ? "positive" : "warning"}
+          icon={TrendingUp}
+        />
+        <KpiCard
+          label="Deals Won"
+          value={kpis.wonLeads.toString()}
+          sub="All time"
+          subTone="positive"
+          icon={Trophy}
+        />
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-4">
+            Lead Funnel
+          </h3>
+          <div className="space-y-2">
+            {kpis.statusBreakdown.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No leads yet.</p>
+            ) : (
+              kpis.statusBreakdown.map((s) => (
+                <div key={s.status} className="flex items-center gap-3">
+                  <StatusBadge status={s.status} />
+                  <span className="ml-auto font-semibold tabular-nums text-sm">
+                    {s.count}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
-          <div className="text-3xl font-bold">284</div>
-          <p className="text-xs text-muted-foreground mt-1 text-emerald-600 font-medium">+5 new this week</p>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-6 stat-glow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-sm text-muted-foreground">Conversion Rate</h3>
-            <TrendingUp className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-3xl font-bold">4.2%</div>
-          <p className="text-xs text-muted-foreground mt-1 text-emerald-600 font-medium">+1.1% from last month</p>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-6 stat-glow">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-sm text-muted-foreground">AI Calls Made</h3>
-            <Bot className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-3xl font-bold">4,209</div>
-          <p className="text-xs text-muted-foreground mt-1 text-emerald-600 font-medium">1,240 hours saved</p>
         </div>
       </div>
-      
-      {/* Skeleton for future charts */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-8">
-        <div className="rounded-xl border border-border bg-card col-span-4 p-6 shadow-sm">
-          <div className="mb-4">
-            <h3 className="font-semibold text-lg">Lead Growth</h3>
-            <p className="text-sm text-muted-foreground">New leads acquired over time.</p>
-          </div>
-          <div className="h-[300px] w-full rounded-md bg-muted/30 shimmer"></div>
+
+      {/* Recent Leads */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="font-semibold">Recent Leads</h3>
+          <p className="text-sm text-muted-foreground">Latest 5 leads added.</p>
         </div>
-        
-        <div className="rounded-xl border border-border bg-card col-span-3 p-6 shadow-sm">
-          <div className="mb-4">
-            <h3 className="font-semibold text-lg">Recent Activities</h3>
-            <p className="text-sm text-muted-foreground">Latest actions across all tenants.</p>
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-8 h-8 rounded-full bg-muted/50 shimmer shrink-0"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 w-3/4 rounded bg-muted/50 shimmer"></div>
-                  <div className="h-2 w-1/2 rounded bg-muted/30 shimmer"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Score</TableHead>
+              <TableHead>Assigned To</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {latestLeads.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  No leads yet. Add your first lead!
+                </TableCell>
+              </TableRow>
+            ) : (
+              latestLeads.map((lead) => (
+                <TableRow key={lead.id}>
+                  <TableCell className="font-medium">{lead.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {lead.source ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={lead.status} />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ScoreRing score={lead.score ?? 0} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {lead.assignedName ?? "Unassigned"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
