@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
 import { addInteraction } from "@/lib/api/lead-actions";
 import * as mock from "@/lib/api/mock-data";
@@ -55,10 +55,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "leadId and note are required" }, { status: 400 });
 
   try {
-    const form = new FormData();
-    form.set("leadId", body.leadId);
-    form.set("note", body.note.trim());
-    await addInteraction(form);
+    await addInteraction(body.leadId, body.note.trim());
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Internal server error";
