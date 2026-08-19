@@ -91,6 +91,19 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
+    // Set tenant context in response headers for API routes
+    if (role) {
+      const { data: tenantProfile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      if (tenantProfile?.tenant_id) {
+        supabaseResponse.headers.set("x-tenant-id", tenantProfile.tenant_id);
+        supabaseResponse.headers.set("x-user-id", user.id);
+      }
+    }
+
     // Redirect authenticated users away from auth pages
     if (isAuthRoute) {
       if (role === "super_admin") return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
