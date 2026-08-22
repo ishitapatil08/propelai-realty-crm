@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { isAuthorizedSuperAdminEmail } from "./constants";
 
 export async function getSession() {
   const cookieStore = await cookies();
@@ -14,10 +15,10 @@ export async function getSession() {
       let tenantId: string | null = null;
       let name = "";
 
-      if (demoUser === "super@propelai.com" || demoUser === "alex@propelai.com") {
+      if (isAuthorizedSuperAdminEmail(demoUser)) {
         role = "super_admin";
         tenantId = null;
-        name = "Alex Rao";
+        name = demoUser.includes("ishita") ? "Ishita Patil" : demoUser.includes("rujut") ? "Rujut Patil" : "Super Admin";
       } else if (demoUser === "admin@tenant.com" || demoUser === "priya@skylinerealty.com") {
         role = "tenant_admin";
         tenantId = "t1";
@@ -39,7 +40,7 @@ export async function getSession() {
 
         return {
           user: {
-            id: demoUser === "super@propelai.com" || demoUser === "alex@propelai.com" ? "d1" : demoUser === "admin@tenant.com" || demoUser === "priya@skylinerealty.com" ? "d2" : "d3",
+            id: isAuthorizedSuperAdminEmail(demoUser) ? "d1" : demoUser === "admin@tenant.com" || demoUser === "priya@skylinerealty.com" ? "d2" : "d3",
             email: demoUser,
             user_metadata: { name },
           } as any,
@@ -77,14 +78,21 @@ export async function getSession() {
     return { user: null, role: null, tenantId: null };
   }
 
-  // We should ideally cache this or use JWT app_metadata for role
   const profile = await db.select({
     role: profiles.role,
     tenantId: profiles.tenantId,
   }).from(profiles).where(eq(profiles.id, user.id));
 
-  const role = profile[0]?.role;
+  let role = profile[0]?.role;
   let tenantId = profile[0]?.tenantId;
+
+  // Security Lock: If role is super_admin, verify email is strictly authorized
+  if (role === "super_admin") {
+    if (!isAuthorizedSuperAdminEmail(user.email)) {
+      // Demote unauthorized super_admin attempt
+      role = "tenant_admin";
+    }
+  }
 
   // Handle Impersonation
   if (role === 'super_admin') {

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { loginWithCredentials, signupWithCredentials } from "@/lib/auth/actions";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
@@ -86,6 +86,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                 <form action={signupWithCredentials} className="space-y-4">
                   <div className="space-y-2">
+                    <label htmlFor="register-name" className="text-sm font-medium">Company or Full Name</label>
+                    <input 
+                      id="register-name"
+                      name="name"
+                      type="text" 
+                      required
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="Skyline Properties"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <label htmlFor="register-email" className="text-sm font-medium">Email Address</label>
                     <input 
                       id="register-email"
@@ -111,7 +122,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                     type="submit"
                     className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-2"
                   >
-                    Create Account
+                    Create Tenant Account
                   </button>
                 </form>
               </div>
@@ -124,10 +135,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <h3 className="text-sm font-medium text-center text-muted-foreground mb-4">Quick Demo Login</h3>
               <div className="space-y-3">
                 <form action={loginWithCredentials}>
-                  <input type="hidden" name="email" value="super@propelai.com" />
+                  <input type="hidden" name="email" value="ishitapatil088@gmail.com" />
                   <input type="hidden" name="password" value="password123" />
-                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
-                    Login as Super Admin (Platform)
+                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                    Login as Super Admin (ishitapatil088@gmail.com)
                   </button>
                 </form>
                 <form action={loginWithCredentials}>

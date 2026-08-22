@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAuthorizedSuperAdminEmail } from "@/lib/auth/constants";
 
 // Explicit cookie type matching @supabase/ssr's CookieMethodsServer interface
 type CookieToSet = {
@@ -45,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
   const demoUserCookie = request.cookies.get("demo_user")?.value;
   if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && demoUserCookie) {
-    if (demoUserCookie === "super@propelai.com" || demoUserCookie === "alex@propelai.com") {
+    if (isAuthorizedSuperAdminEmail(demoUserCookie)) {
       user = { id: "d1", email: demoUserCookie };
       role = "super_admin";
     } else if (demoUserCookie === "admin@tenant.com" || demoUserCookie === "priya@skylinerealty.com") {
@@ -70,9 +71,22 @@ export async function middleware(request: NextRequest) {
           .select("role")
           .eq("id", user.id)
           .single();
-        role = profile?.role as string | null;
+        
+        const rawRole = profile?.role as string | null;
+
+        // Security Lock: If role is super_admin, verify email is strictly authorized
+        if (rawRole === "super_admin") {
+          if (isAuthorizedSuperAdminEmail(user.email)) {
+            role = "super_admin";
+          } else {
+            // Unauthorized super_admin attempt -> fallback to tenant_admin
+            role = "tenant_admin";
+          }
+        } else {
+          role = rawRole;
+        }
       }
-    } catch (e) {
+    } catch {
       // Ignore connection/fetch errors in dev mode
     }
   }
@@ -106,15 +120,23 @@ export async function middleware(request: NextRequest) {
 
     // Redirect authenticated users away from auth pages
     if (isAuthRoute) {
-      if (role === "super_admin") return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+      if (role === "super_admin" && isAuthorizedSuperAdminEmail(user.email)) {
+        return NextResponse.redirect(new URL("/super-admin/dashboard", request.url));
+      }
       if (role === "tenant_admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       if (role === "staff") return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
 
     // Strict Route Isolation Guards
-    if (path.startsWith("/super-admin") && role !== "super_admin") {
-      if (role === "tenant_admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-      return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+    // Super-Admin route locked exclusively to authorized super_admin emails
+    if (path.startsWith("/super-admin")) {
+      const isSuperAdminAuthorized = role === "super_admin" && isAuthorizedSuperAdminEmail(user.email);
+      if (!isSuperAdminAuthorized) {
+        if (role === "tenant_admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+        if (role === "staff") return NextResponse.redirect(new URL("/staff/dashboard", request.url));
+        return NextResponse.redirect(new URL("/login?error=Access+denied.+Super+Admin+is+restricted.", request.url));
+      }
     }
 
     if (path.startsWith("/admin") && role !== "tenant_admin") {
