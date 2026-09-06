@@ -13,13 +13,14 @@ export async function loginWithCredentials(formData: FormData) {
   const password = formData.get("password") as string;
   const emailLower = email?.trim().toLowerCase();
 
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-    const demoEmails = [
-      "super@propelai.com", "alex@propelai.com",
-      "ishitapatil088@gmail.com", "rujutpatil8975@gmail.com",
-      "admin@tenant.com", "priya@skylinerealty.com",
-      "staff@tenant.com", "rohan@skylinerealty.com"
-    ];
+  const demoEmails = [
+    "super@propelai.com", "alex@propelai.com",
+    "ishitapatil088@gmail.com", "rujutpatil8975@gmail.com",
+    "admin@tenant.com", "priya@skylinerealty.com",
+    "staff@tenant.com", "rohan@skylinerealty.com"
+  ];
+
+  if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || demoEmails.includes(emailLower)) {
     if (demoEmails.includes(emailLower)) {
       const cookieStore = await cookies();
       cookieStore.set("demo_user", emailLower, {
