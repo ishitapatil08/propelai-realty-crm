@@ -85,13 +85,41 @@ export async function getSession() {
     return { user: null, role: null, tenantId: null };
   }
 
-  const profile = await db.select({
-    role: profiles.role,
-    tenantId: profiles.tenantId,
-  }).from(profiles).where(eq(profiles.id, user.id));
+  let role: string | null = null;
+  let tenantId: string | null = null;
 
-  let role = profile[0]?.role;
-  let tenantId = profile[0]?.tenantId;
+  try {
+    const profile = await db
+      .select({
+        role: profiles.role,
+        tenantId: profiles.tenantId,
+      })
+      .from(profiles)
+      .where(eq(profiles.id, user.id));
+
+    if (profile[0]) {
+      role = profile[0].role;
+      tenantId = profile[0].tenantId;
+    }
+  } catch {}
+
+  if (!role) {
+    try {
+      const { data: sbProfile } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", user.id)
+        .single();
+      if (sbProfile) {
+        role = sbProfile.role;
+        tenantId = sbProfile.tenant_id;
+      }
+    } catch {}
+  }
+
+  if (!role) {
+    role = isAuthorizedSuperAdminEmail(user.email) ? "super_admin" : "tenant_admin";
+  }
 
   // Security Lock: If role is super_admin, verify email is strictly authorized
   if (role === "super_admin") {
@@ -102,8 +130,8 @@ export async function getSession() {
   }
 
   // Handle Impersonation
-  if (role === 'super_admin') {
-    const impersonatedTenantId = cookieStore.get('impersonated_tenant_id')?.value;
+  if (role === "super_admin") {
+    const impersonatedTenantId = cookieStore.get("impersonated_tenant_id")?.value;
     if (impersonatedTenantId) {
       tenantId = impersonatedTenantId;
     }

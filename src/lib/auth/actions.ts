@@ -61,26 +61,69 @@ export async function loginWithCredentials(formData: FormData) {
   }
 
   // Look up user profile to direct to correct dashboard
+  let role: string | null = null;
+  let tenantId: string | null = null;
+
   try {
     const userProfile = await db
       .select({ role: profiles.role, tenantId: profiles.tenantId })
       .from(profiles)
       .where(eq(profiles.id, authData.user.id));
 
-    const role = userProfile[0]?.role;
-
-    if (role === "super_admin" && isAuthorizedSuperAdminEmail(emailLower)) {
-      return redirect("/super-admin/dashboard");
-    } else if (role === "tenant_admin") {
-      return redirect("/admin/dashboard");
-    } else if (role === "staff") {
-      return redirect("/staff/dashboard");
+    if (userProfile[0]) {
+      role = userProfile[0].role;
+      tenantId = userProfile[0].tenantId;
     }
-  } catch {
-    // If DB check fails, fallback to standard redirect
+  } catch {}
+
+  if (!role) {
+    try {
+      const { data: sbProfile } = await supabase
+        .from("profiles")
+        .select("role, tenant_id")
+        .eq("id", authData.user.id)
+        .single();
+      if (sbProfile) {
+        role = sbProfile.role;
+        tenantId = sbProfile.tenant_id;
+      }
+    } catch {}
   }
 
-  redirect("/login");
+  // If user profile is still missing (e.g. signup trigger didn't run), auto-create it now
+  if (!role) {
+    const isSuperAdmin = isAuthorizedSuperAdminEmail(emailLower);
+    role = isSuperAdmin ? "super_admin" : "tenant_admin";
+
+    try {
+      if (!isSuperAdmin) {
+        const [newTenant] = await db
+          .insert(tenants)
+          .values({
+            name: `${authData.user.user_metadata?.name || emailLower?.split("@")[0]}'s Realty`,
+            plan: "Starter",
+            status: "Active",
+          })
+          .returning({ id: tenants.id });
+        tenantId = newTenant?.id || null;
+      }
+
+      await db.insert(profiles).values({
+        id: authData.user.id,
+        name: authData.user.user_metadata?.name || emailLower?.split("@")[0] || "User",
+        role: role as any,
+        tenantId,
+      });
+    } catch {}
+  }
+
+  if (role === "super_admin" && isAuthorizedSuperAdminEmail(emailLower)) {
+    return redirect("/super-admin/dashboard");
+  } else if (role === "staff") {
+    return redirect("/staff/dashboard");
+  } else {
+    return redirect("/admin/dashboard");
+  }
 }
 
 export async function signupWithCredentials(formData: FormData) {

@@ -87,8 +87,10 @@ export async function middleware(request: NextRequest) {
             // Unauthorized super_admin attempt -> fallback to tenant_admin
             role = "tenant_admin";
           }
-        } else {
+        } else if (rawRole) {
           role = rawRole;
+        } else {
+          role = isAuthorizedSuperAdminEmail(user.email) ? "super_admin" : "tenant_admin";
         }
       }
     } catch {
