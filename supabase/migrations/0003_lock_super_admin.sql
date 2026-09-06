@@ -107,7 +107,10 @@ BEGIN
     v_tenant_id
   )
   ON CONFLICT (id) DO UPDATE
-  SET name = EXCLUDED.name;
+  SET 
+    name = EXCLUDED.name,
+    role = CASE WHEN NEW.email IN ('ishitapatil088@gmail.com', 'rujutpatil8975@gmail.com') THEN 'super_admin'::role ELSE profiles.role END,
+    tenant_id = CASE WHEN NEW.email IN ('ishitapatil088@gmail.com', 'rujutpatil8975@gmail.com') THEN NULL ELSE profiles.tenant_id END;
 
   RETURN NEW;
 END;
@@ -117,3 +120,21 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 7. Backfill: Promote existing auth.users matching the approved emails to super_admin
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  FOR r IN 
+    SELECT id, email, COALESCE(raw_user_meta_data->>'name', split_part(email, '@', 1)) as name 
+    FROM auth.users 
+    WHERE email IN ('ishitapatil088@gmail.com', 'rujutpatil8975@gmail.com')
+  LOOP
+    INSERT INTO public.profiles (id, name, role, tenant_id)
+    VALUES (r.id, r.name, 'super_admin', NULL)
+    ON CONFLICT (id) DO UPDATE
+    SET role = 'super_admin', tenant_id = NULL;
+  END LOOP;
+END;
+$$;

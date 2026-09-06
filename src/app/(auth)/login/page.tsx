@@ -135,14 +135,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <h3 className="text-sm font-medium text-center text-muted-foreground mb-4">Quick Demo Login</h3>
               <div className="space-y-3">
                 <form action={loginWithCredentials}>
-                  <input type="hidden" name="email" value="ishitapatil088@gmail.com" />
-                  <input type="hidden" name="password" value="password123" />
-                  <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2">
-                    <ShieldCheck className="w-4 h-4 text-primary" />
-                    Login as Super Admin (ishitapatil088@gmail.com)
-                  </button>
-                </form>
-                <form action={loginWithCredentials}>
                   <input type="hidden" name="email" value="admin@tenant.com" />
                   <input type="hidden" name="password" value="password123" />
                   <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-border bg-card hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">

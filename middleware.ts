@@ -97,7 +97,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const path = request.nextUrl.pathname;
-  const isAuthRoute = path === "/login" || path === "/select-role";
+  const isAuthRoute = path === "/login" || path === "/select-role" || path === "/super-admin-login";
   const isPublicRoute = path === "/";
   const isStaticAsset =
     path.startsWith("/_next") ||
@@ -135,7 +135,7 @@ export async function middleware(request: NextRequest) {
 
     // Strict Route Isolation Guards
     // Super-Admin route locked exclusively to authorized super_admin emails
-    if (path.startsWith("/super-admin")) {
+    if (path.startsWith("/super-admin") && path !== "/super-admin-login") {
       const isSuperAdminAuthorized = role === "super_admin" && isAuthorizedSuperAdminEmail(user.email);
       if (!isSuperAdminAuthorized) {
         if (role === "tenant_admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
